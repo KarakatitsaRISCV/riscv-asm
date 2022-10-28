@@ -18,6 +18,7 @@ SECTIONS{
   .data : AT(ADDR(.text) + SIZEOF(.text)){
     _data_start = .;
     *(.data*)
+    *(.sdata)
     . = ALIGN(4);
     _data_end = .;
   } > ram
