@@ -10,7 +10,7 @@
 //запретить прерывания глобально
 #define eclic_global_interrupt_disable() clear_csr(mstatus, MSTATUS_MIE)
 
-__attribute__((naked)) int main();
+//__attribute__((naked)) int main();
 
 //прописываем для всех прерываний прототипы, отмеченные именно как прерывания
 __attribute__((interrupt)) void eclic_msip_handler(void);
