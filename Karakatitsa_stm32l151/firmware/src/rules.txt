@@ -1,0 +1,18 @@
+cat /etc/udev/rules.d/98-usbserial.rules 
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_ft232r_", SYMLINK+="tty_ft232r_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_hl340_", SYMLINK+="tty_hl340_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_cp210x_", SYMLINK+="tty_cp210x_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_pl2303_", SYMLINK+="tty_pl2302_%c"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="05df" ENV{CONNECTED_vusb}="yes"
+ENV{CONNECTED_vusb}=="yes", SUBSYSTEM=="tty", ATTRS{interface}=="progr", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_STFLASH_", SYMLINK+="tty_STFLASH_%c"
+ENV{CONNECTED_vusb}=="yes", SUBSYSTEM=="tty", ATTRS{interface}=="tty", PROGRAM="/etc/udev/rules.d/calc_ft232r.sh tty_COKP_", SYMLINK+="tty_COKP_%c"
+
+
+
+cat /etc/udev/rules.d/calc_ft232r.sh
+
+#!/bin/bash
+x = ls /dev | grep $1 | wc -l
+echo $x
