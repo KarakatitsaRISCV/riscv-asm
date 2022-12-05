@@ -1,0 +1,9 @@
+cat /etc/udev/rules.d/98-usbserial.rules 
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", PROGRAM="/bin/bash -c \"ls /dev | grep tty_ft232r_ | wc -l \"", SYMLINK+="tty_ft232r_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", PROGRAM="/bin/bash -c \"ls /dev | grep tty_hl340_ | wc -l \"", SYMLINK+="tty_hl340_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", PROGRAM="/bin/bash -c \"ls /dev | grep tty_cp210x_ | wc -l \"", SYMLINK+="tty_cp210x_%c"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", PROGRAM="/bin/bash -c \"ls /dev | grep tty_pl2303_ | wc -l \"", SYMLINK+="tty_pl2303_%c"
+
+SUBSYSTEM=="tty", ATTRS{manufacturer}=="COKPOWEHEU" ENV{CONNECTED_COKP}="yes"
+ENV{CONNECTED_COKP}=="yes", SUBSYSTEM=="tty", ATTRS{interface}=="?*", PROGRAM="/bin/bash -c \"ls /dev | grep tty_$attr{interface}_ | wc -l \"", SYMLINK+="tty_$attr{interface}_%c"
