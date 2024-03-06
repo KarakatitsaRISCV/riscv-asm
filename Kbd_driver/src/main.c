@@ -12,7 +12,7 @@
 //char *cfgname = "~/.config/COKP_kbd.cfg";
 char *cfgname = "COKP_kbd.cfg";
 wchar_t man_str[50] = L"COKPOWEHEU";
-wchar_t prod_str[50] = L"USB RISCV programmer";
+wchar_t prod_str[50] = L"Unknown"; //L"USB RISCV programmer";
 volatile int t_default_ms = 1000;
 
 union{
