@@ -1,3 +1,4 @@
+.equ mtvt,		0x307
 .equ mtvt2,		0x7EC
 .equ mnvec,		0x7C3
 .equ mmisc_ctl,		0x7D0

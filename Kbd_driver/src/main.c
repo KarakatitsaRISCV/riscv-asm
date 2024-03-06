@@ -11,6 +11,8 @@
 
 //char *cfgname = "~/.config/COKP_kbd.cfg";
 char *cfgname = "COKP_kbd.cfg";
+wchar_t man_str[50] = L"COKPOWEHEU";
+wchar_t prod_str[50] = L"USB RISCV programmer";
 volatile int t_default_ms = 1000;
 
 union{
@@ -268,6 +270,8 @@ void cfg_load(){
       fprintf(pf, "\n\n");
     }
     fprintf(pf, "T_delay_ms = %u\n", t_default_ms);
+    fprintf(pf, "Manufacturer = %ls\n", man_str);
+    fprintf(pf, "Product = %ls\n", prod_str);
     fprintf(pf, "\n");
     fprintf(pf, "#==== Comment ====\n");
     fprintf(pf, "#  ┌──────────────────────┐\n");
@@ -338,11 +342,15 @@ void cfg_load(){
     if( fgets(str, sizeof(str), pf) == NULL)break;
     line++;
     char name[100], val[100];
-    if(sscanf(str, "%99s%*[ \t=]%99s", name, val) < 1)continue;
+    if(sscanf(str, "%99s%*[ \t=]%[^\n]", name, val) < 1)continue;
     if(name[0] == '#')continue;
     if(StrEq(name, "T_delay_ms")){
       t_default_ms = atoi(val);
       if(t_default_ms == 0)t_default_ms = 1000;
+    }else if(StrEq(name, "Manufacturer")){
+      mbstowcs(man_str, val, sizeof(man_str)/sizeof(man_str[0])-1);
+    }else if(StrEq(name, "Product")){
+      mbstowcs(prod_str, val, sizeof(prod_str)/sizeof(prod_str[0])-1);
     }
   }
   fclose(pf);
@@ -351,15 +359,14 @@ void cfg_load(){
 void usb_update(){
   if(initflags.usb_pause)return;
   initflags.usb_err = 0;
-  hiddevice_t *dev = HidOpen(0x16C0, 0x05DF, L"COKPOWEHEU", L"USB RISCV programmer");
+  hiddevice_t *dev = HidOpen(0x16C0, 0x05DF, man_str, prod_str);
   if(!dev){
     initflags.usb_err = 1;
     return;
   }
   uint16_t data = 0;
   for(int i=15; i>=0; i--){
-    data <<= 1;
-    if(button[i].status != BTN_RELEASED)data |= 1;
+    if(button[i].status != BTN_RELEASED)data |= button[i].mask;
   }
   int res = HidWrite(dev, &data, 2);
   //printf("\033[19H%.4X  \t%i", data, res);
