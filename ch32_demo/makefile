@@ -1,6 +1,6 @@
 progname := firmware
 progdir := res
-files := main
+files := main audiodata
 
 MCU := CH32V303
 HSE_CLOCK := 8000000
@@ -54,6 +54,8 @@ LDFLAGS = $(COMMON)
 LDFLAGS += $(LDFLAGS_$(MCU))
 LDFLAGS += -nostdlib
 
+CFLAGS += -DAUDIOSRC='"_binary_src_audiodata_wav"'
+
 files += $(STARTUP_$(MCU))
 
 frmname = $(progdir)/$(progname)
@@ -88,6 +90,10 @@ $(builddir)/%.o: $(libdir)/%.S
 	mkdir -p $(builddir)
 	$(CC) -c $(ASMFLAGS) $< -o $@
 	@echo
+$(builddir)/audiodata.o: $(srcdir)/audiodata.wav
+	mkdir -p $(builddir)
+	$(CROSS_COMPILE)ld -melf32lriscv -r -b binary -o $@ $<
+	$(CROSS_COMPILE)objcopy --rename-section .data=.rodata,alloc,load,readonly,data,contents $@ $@
 	
 clean:
 	rm -rf $(progdir)
@@ -100,7 +106,7 @@ prog:	$(frmname).bin
 	echo 'RBU' > /dev/tty_STFLASH2_0
 	echo 'rBU' > /dev/tty_STFLASH2_0
 	sleep 1
-	./wch-isp --port=/dev/tty_STFLASH2_0 -b write $(frmname).bin
+	./wch-isp --port=/dev/tty_STFLASH2_0 -p -b write $(frmname).bin
 	stty -F /dev/tty_STFLASH2_0 50
 	echo 'RBU' > /dev/tty_STFLASH2_0
 	sleep 1

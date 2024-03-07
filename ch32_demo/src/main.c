@@ -9,7 +9,27 @@
 void SystemInit(void){}
 void sleep(uint32_t t){while(t--)asm volatile("nop");}
 
-
+void uart_u32(uint32_t val){
+  char buf[11];
+  char *ch = &buf[10];
+  ch[0] = 0;
+  do{
+    *(--ch) = (val % 10) + '0';
+    val /= 10;
+  }while(val);
+  while(ch[0] != 0){
+    UART_putc(USART, ch[0]);
+    ch++;
+  }
+  UART_putc(USART, '\r'); UART_putc(USART, '\n');
+}
+void uart_b16(uint16_t val){
+  for(uint16_t mask = 0x8000; mask!=0; mask>>=1){
+    if(mask == 0x0080)UART_putc(USART, ' ');
+    if(val & mask)UART_putc(USART, '1') else UART_putc(USART, '0');
+  }
+  UART_putc(USART, '\r'); UART_putc(USART, '\n');
+}
 
 
 #define ADDR_0	B,0,1,GPIO_PP50
@@ -80,6 +100,87 @@ void screen_init(){
 
 
 
+uint16_t kbd_update(){
+  static uint16_t status_res = 0;
+  static uint16_t status = 0;
+  static uint16_t idx = 0;
+  status <<= 4;
+  status |= GPIOA->INDR & 0x000F;
+  switch(idx){
+    case 0:
+      GPIO_mode(A, 4, GPIO_HIZ); GPIO_mode(A, 5, GPIO_PP50); idx = 1;
+      break;
+    case 1:
+      GPIO_mode(A, 5, GPIO_HIZ); GPIO_mode(A, 6, GPIO_PP50); idx = 2;
+      break;
+    case 2:
+      GPIO_mode(A, 6, GPIO_HIZ); GPIO_mode(A, 7, GPIO_PP50); idx = 3;
+      break;
+    default:
+      GPIO_mode(A, 7, GPIO_HIZ); GPIO_mode(A, 4, GPIO_PP50); idx = 0;
+      status_res = status;
+      break;
+  }
+  return status_res;
+}
+void kbd_init(){
+  GPIOA->CFGLR = (0x11110000 * GPIO_HIZ) | (0x00001111 * GPIO_PULL);
+  GPIOA->OUTDR = (GPIOA->OUTDR & 0xFF00) | (0b1111 << 4);
+}
+void mask2disp(uint16_t mask){
+  int res = 0;
+  while(mask){
+    res++;
+    mask >>= 1;
+  }
+  if(res == 0){screen[10] = 0; return;}
+  res--;
+  screen[10] = seg_code[res];
+}
+
+
+extern const uint8_t adata_start[]   asm(AUDIOSRC "_start");
+extern const uint8_t adata_end[]     asm(AUDIOSRC "_end");
+volatile uint32_t data_size = 0;
+
+void aud_init(){
+  RCC->APB2PCENR |= RCC_TIM1EN;
+  RCC->APB1PCENR |= RCC_TIM2EN;
+  GPIO_config( PWM ); //TIM1.1
+  data_size = adata_end - adata_start;
+  
+  TIM2->PSC = (1800 - 1); //144MHz / 1800 = 80000
+  TIM2->ATRLR = (10 - 1);
+  TIM2->CH1CVR = 1;
+  TIM2->DMAINTENR = TIM_CC1E;
+  TIM2->CTLR1 |= TIM_ARPE;
+  NVIC_EnableIRQ( TIM2_IRQn );
+  TIM2->CTLR1 |= TIM_CEN;
+  
+  TIM1->BDTR |= TIM_MOE;
+  TIM1->PSC = (1-1);
+  TIM1->ATRLR = (256 - 1);
+  TIM1->CH1CVR = 128;
+  PM_BITMASK( TIM1->CHCTLR1, TIM_OC1M, 0b110 ); //прямой ШИМ
+  PM_BITMASK( TIM1->CHCTLR1, TIM_CC1S, 0b00 ); //output
+  TIM1->CCER |= TIM_CC1E;
+  PM_BITMASK( TIM1->CTLR1, TIM_CMS, 0b00 ); //edge-alignment mode
+  TIM1->CTLR1 |= TIM_CEN;
+}
+
+__attribute__((interrupt)) void TIM2_IRQHandler(void){
+  static uint32_t data_pos = 0;
+  TIM1->CH1CVR = adata_start[ data_pos ];
+  data_pos++;
+  if(data_pos >= data_size){
+    GPO_T(GLED);
+    data_pos = 0;
+  }
+  
+  TIM2->INTFR = 0;
+}
+
+
 
 int main(){
   clock_HS(1);
@@ -89,17 +190,26 @@ int main(){
   UART_init(USART, 144000000/2/115200);
   UART_puts(USART, __TIME__ " " __DATE__ "\r\n");
   screen_init();
+  kbd_init();
+  aud_init();
   
   int led_t = 0;
+  uint16_t kbd = 0, kbd_prev = 0;
   while(1){
     led_t++;
     if(led_t > 1000){
-      GPO_T(GLED);
+      //GPO_T(GLED);
       GPO_T(RLED);
       led_t = 0;
     }
     
     sleep(5000);
     screen_update();
+    kbd = kbd_update();
+    mask2disp(kbd);
+    if(kbd != kbd_prev){
+      uart_b16(kbd);
+    }
+    kbd_prev = kbd;
   }
 }
