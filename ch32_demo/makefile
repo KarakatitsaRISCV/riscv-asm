@@ -61,6 +61,8 @@ files += $(STARTUP_$(MCU))
 frmname = $(progdir)/$(progname)
 objs = $(addprefix $(builddir)/,$(addsuffix .o,$(files)))
 
+uart_port="/dev/tty_CH32_PROG_0"
+
 all: $(frmname).bin $(frmname).hex $(frmname).lss size
 
 $(frmname).bin: $(frmname).elf
@@ -101,16 +103,16 @@ clean:
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
 prog:	$(frmname).bin
-	stty -F /dev/tty_STFLASH2_0 300
-	stty -F /dev/tty_STFLASH2_0 50
-	echo 'RBU' > /dev/tty_STFLASH2_0
-	echo 'rBU' > /dev/tty_STFLASH2_0
+	stty -F $(uart_port) 300
+	stty -F $(uart_port) 50
+	echo 'RBU' > $(uart_port)
+	echo 'rBU' > $(uart_port)
 	sleep 1
-	./wch-isp --port=/dev/tty_STFLASH2_0 -p -b write $(frmname).bin
-	stty -F /dev/tty_STFLASH2_0 50
-	echo 'RBU' > /dev/tty_STFLASH2_0
+	./wch-isp --port=$(uart_port) -p -b write $(frmname).bin
+	stty -F $(uart_port) 50
+	echo 'RbU' > $(uart_port)
 	sleep 1
-	echo 'rbuz' > /dev/tty_STFLASH2_0
+	echo 'rbuz' > $(uart_port)
 
 -include $(shell mkdir -p $(builddir)/dep) $(wildcard $(builddir)/dep/*)
 

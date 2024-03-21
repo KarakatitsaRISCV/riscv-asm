@@ -17,7 +17,7 @@ OBJDUMP=$(CROSS_COMPILE)objdump
 SIZE=$(CROSS_COMPILE)size
 
 COMMON = -MD -MP -MT $(builddir)/$(*F).o -MF $(builddir)/dep/$(@F).mk
-COMMON += -march=rv32imac -mabi=ilp32 -mcmodel=medany
+COMMON += -march=rv32imac_zicsr -mabi=ilp32 -mcmodel=medany
 COMMON += -DHXTAL_VALUE=$(HSE_CLOCK)
 ASMFLAGS = $(COMMON)
 CFLAGS = $(COMMON)
@@ -26,7 +26,7 @@ CFLAGS += -I$(libdir)/Firmware/GD32VF103_standard_peripheral/Include/
 CFLAGS += -I$(libdir)/Firmware/GD32VF103_standard_peripheral/
 CFLAGS += -I$(libdir)/Firmware/RISCV/drivers/
 CFLAGS += -I$(libdir)/Firmware/
-LDFLAGS := -march=rv32imac -mabi=ilp32 -mcmodel=medany -nostdlib -T $(libdir)/gd32vf103cbt6.ld
+LDFLAGS := -march=rv32imac_zicsr -mabi=ilp32 -mcmodel=medany -nostdlib -T $(libdir)/gd32vf103cbt6.ld
 
 frmname = $(progdir)/$(progname)
 objs = $(addprefix $(builddir)/,$(addsuffix .o,$(files)))
