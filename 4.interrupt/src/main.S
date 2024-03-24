@@ -1,3 +1,4 @@
+.equ mtvt,				0x307
 .equ mtvt2,				0x7EC
 .equ MSTATUS_MIE, 		(1<<3)
 

@@ -6,7 +6,7 @@ srcdir := src
 builddir := build
 libdir := lib
 
-CROSS_COMPILE=riscv64-unknown-elf-
+#CROSS_COMPILE=riscv64-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 AS=$(CROSS_COMPILE)gcc
 LD=$(CROSS_COMPILE)gcc
@@ -14,9 +14,17 @@ OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 SIZE=$(CROSS_COMPILE)size
 
-COMMON := -march=rv32imac -mabi=ilp32 -mcmodel=medany
+COMMON := -march=rv32imac_zicsr -mabi=ilp32 -mcmodel=medany -static -fno-plt -fno-pic
 ASMFLAGS := $(COMMON)
-LDFLAGS := -march=rv32imac -mabi=ilp32 -mcmodel=medany -nostdlib -T lib/gd32vf103cbt6.ld
+LDFLAGS := $(COMMON) -Wl,--build-id=none -nostdlib -T lib/gd32vf103cbt6.ld
+
+ifneq (, $(shell which riscv64-unknown-elf-gcc 2>/dev/null))
+  CROSS_COMPILE=riscv64-unknown-elf-
+else ifneq (, $(shell which riscv64-linux-gnu-gcc 2>/dev/null))
+  CROSS_COMPILE=riscv64-linux-gnu-
+else
+  $(error Unknown RISC-V compiler)
+endif
 
 frmname = $(progdir)/$(progname)
 objs = $(addprefix $(builddir)/,$(addsuffix .o,$(files)))
@@ -47,27 +55,30 @@ clean:
 	rm -rf $(builddir)
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
+
+uart_port="/dev/tty_GD32_PROG_0"
+	
 prog:	$(frmname).bin
-	stty -F /dev/tty_STFLASH_0 300
-	stty -F /dev/tty_STFLASH_0 50
-	echo 'RBU' > /dev/tty_STFLASH_0
-	echo 'rBU' > /dev/tty_STFLASH_0
+	stty -F $(uart_port) 300
+	stty -F $(uart_port) 50
+	echo 'RBU' > $(uart_port)
+	echo 'rBU' > $(uart_port)
 	sleep 1
-	stm32flash /dev/tty_STFLASH_0 -w $(frmname).bin
-	stty -F /dev/tty_STFLASH_0 50
-	echo 'RBU' > /dev/tty_STFLASH_0
+	stm32flash $(uart_port) -w $(frmname).bin
+	stty -F $(uart_port) 50
+	echo 'RbU' > $(uart_port)
 	sleep 1
-	echo 'rbuz' > /dev/tty_STFLASH_0
+	echo 'rbuz' > $(uart_port)
 reset:
-	stty -F /dev/tty_STFLASH_0 300
-	stty -F /dev/tty_STFLASH_0 50
-	echo 'RBU' > /dev/tty_STFLASH_0
-	echo 'rBU' > /dev/tty_STFLASH_0
+	stty -F $(uart_port) 300
+	stty -F $(uart_port) 50
+	echo 'RBU' > $(uart_port)
+	echo 'rBU' > $(uart_port)
 	sleep 1
-	stty -F /dev/tty_STFLASH_0 50
-	echo 'RBU' > /dev/tty_STFLASH_0
+	stty -F $(uart_port) 50
+	echo 'RbU' > $(uart_port)
 	sleep 1
-	echo 'rbuz' > /dev/tty_STFLASH_0
+	echo 'rbuz' > $(uart_port)
 prog_st: $(frmname).bin
 	stm32flash /dev/ttyUSB0 -w $(frmname).bin
 dfu: $(frmname).bin

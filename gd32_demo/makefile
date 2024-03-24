@@ -7,7 +7,7 @@ srcdir := src
 builddir := build
 libdir := lib
 
-CROSS_COMPILE=riscv64-unknown-elf-
+#CROSS_COMPILE=riscv64-unknown-elf-
 CC=$(CROSS_COMPILE)gcc
 AS=$(CROSS_COMPILE)gcc
 LD=$(CROSS_COMPILE)gcc
@@ -16,7 +16,7 @@ OBJDUMP=$(CROSS_COMPILE)objdump
 SIZE=$(CROSS_COMPILE)size
 
 COMMON = -MD -MP -MT $(builddir)/$(*F).o -MF $(builddir)/dep/$(@F).mk
-COMMON += -march=rv32imac_zicsr -mabi=ilp32 -mcmodel=medany
+COMMON += -march=rv32imac_zicsr -mabi=ilp32 -mcmodel=medany -static -fno-plt -fno-pic -fno-asynchronous-unwind-tables -fno-unwind-tables
 COMMON += -DHXTAL_VALUE=$(HSE_CLOCK)
 ASMFLAGS = $(COMMON)
 CFLAGS = $(COMMON)
@@ -25,7 +25,15 @@ CFLAGS += -I$(libdir)/Firmware/GD32VF103_standard_peripheral/Include/
 CFLAGS += -I$(libdir)/Firmware/GD32VF103_standard_peripheral/
 CFLAGS += -I$(libdir)/Firmware/RISCV/drivers/
 CFLAGS += -I$(libdir)/Firmware/
-LDFLAGS := $(COMMON) -nostdlib -T $(libdir)/gd32vf103cbt6.ld
+LDFLAGS := $(COMMON) -Wl,--build-id=none -nostdlib -T lib/gd32vf103cbt6.ld
+
+ifneq (, $(shell which riscv64-unknown-elf-gcc 2>/dev/null))
+  CROSS_COMPILE=riscv64-unknown-elf-
+else ifneq (, $(shell which riscv64-linux-gnu-gcc 2>/dev/null))
+  CROSS_COMPILE=riscv64-linux-gnu-
+else
+  $(error Unknown RISC-V compiler)
+endif
 
 CFLAGS += -DAUDIOSRC='"_binary_src_audiodata_wav"'
 
@@ -63,13 +71,14 @@ $(builddir)/audiodata.o: $(srcdir)/audiodata.wav
 	$(CROSS_COMPILE)ld -melf32lriscv -r -b binary -o $@ $<
 	$(CROSS_COMPILE)objcopy --rename-section .data=.rodata,alloc,load,readonly,data,contents $@ $@
 	
-uart_port="/dev/tty_GD32_PROG_0"
-	
 clean:
 	rm -rf $(progdir)
 	rm -rf $(builddir)
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
+
+uart_port="/dev/tty_GD32_PROG_0"
+	
 prog:	$(frmname).bin
 	stty -F $(uart_port) 300
 	stty -F $(uart_port) 50
@@ -88,7 +97,7 @@ reset:
 	echo 'rBU' > $(uart_port)
 	sleep 1
 	stty -F $(uart_port) 50
-	echo 'RBU' > $(uart_port)
+	echo 'RbU' > $(uart_port)
 	sleep 1
 	echo 'rbuz' > $(uart_port)
 prog_st: $(frmname).bin
