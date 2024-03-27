@@ -62,8 +62,6 @@ LDFLAGS = $(COMMON)
 LDFLAGS += $(LDFLAGS_$(MCU))
 LDFLAGS += -Wl,--build-id=none -nostdlib
 
-CFLAGS += -DAUDIOSRC='"_binary_src_audiodata_wav"'
-
 files += $(STARTUP_$(MCU))
 
 frmname = $(progdir)/$(progname)
@@ -98,10 +96,6 @@ $(builddir)/%.o: $(libdir)/%.S
 	mkdir -p $(builddir)
 	$(CC) -c $(ASMFLAGS) $< -o $@
 	@echo
-$(builddir)/audiodata.o: $(srcdir)/audiodata.wav
-	mkdir -p $(builddir)
-	$(CROSS_COMPILE)ld -melf32lriscv -r -b binary -o $@ $<
-	$(CROSS_COMPILE)objcopy --rename-section .data=.rodata,alloc,load,readonly,data,contents $@ $@
 	
 clean:
 	rm -rf $(progdir)

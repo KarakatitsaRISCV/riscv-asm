@@ -1,6 +1,6 @@
 progname := firmware
 progdir := res
-files := main audiodata
+files := main
 
 MCU := CH32V303
 HSE_CLOCK := 8000000
@@ -62,10 +62,6 @@ LDFLAGS = $(COMMON)
 LDFLAGS += $(LDFLAGS_$(MCU))
 LDFLAGS += -Wl,--build-id=none -nostdlib
 
-CFLAGS += -DAUDIOSRC='"_binary_src_audiodata_wav"'
-
-files += $(STARTUP_$(MCU))
-
 frmname = $(progdir)/$(progname)
 objs = $(addprefix $(builddir)/,$(addsuffix .o,$(files)))
 
@@ -98,10 +94,7 @@ $(builddir)/%.o: $(libdir)/%.S
 	mkdir -p $(builddir)
 	$(CC) -c $(ASMFLAGS) $< -o $@
 	@echo
-$(builddir)/audiodata.o: $(srcdir)/audiodata.wav
-	mkdir -p $(builddir)
-	$(CROSS_COMPILE)ld -melf32lriscv -r -b binary -o $@ $<
-	$(CROSS_COMPILE)objcopy --rename-section .data=.rodata,alloc,load,readonly,data,contents $@ $@
+	
 clean:
 	rm -rf $(progdir)
 	rm -rf $(builddir)
@@ -121,6 +114,7 @@ prog:	$(frmname).bin
 	echo 'RbU' > $(uart_port)
 	sleep 1
 	echo 'rbuz' > $(uart_port)
+		
 
 -include $(shell mkdir -p $(builddir)/dep) $(wildcard $(builddir)/dep/*)
 
