@@ -27,7 +27,7 @@ union{
 
 void usb_update();
 void help(char name[]);
-void cfg_load();
+char cfg_load();
 
 struct termios saved_attributes;
 
@@ -204,7 +204,7 @@ int main(int argc, char **argv){
       return 0;
     }
   }
-  cfg_load();
+  if( !cfg_load() )return 1;
   //return 0;
   
   char ch;
@@ -248,7 +248,7 @@ void help(char name[]){
   printf("\nESC - exit\n");
 }
 
-void cfg_load(){
+char cfg_load(){
   char *cfg = cfgname;
   char name[1000] = "";
   if(cfg[0] == '~'){
@@ -260,7 +260,7 @@ void cfg_load(){
   FILE *pf;
   if(initflags.restore){
     pf = fopen(name, "wt");
-    if(pf == NULL){fprintf(stderr, "Can not open config file [%s]\n", name); return;}
+    if(pf == NULL){fprintf(stderr, "Can not open config file [%s]\n", name); return 0;}
     for(int i=0; i<4; i++){
       for(int j=0; j<4; j++)fprintf(pf, "%.5s\t", button[j+4*i].caption);
       fprintf(pf, "\n");
@@ -283,23 +283,23 @@ void cfg_load(){
     fprintf(pf, "#  [hotkey]     \t 1-character hotkey to press the button\n");
     fprintf(pf, "#  [hotkey_hold]\t 1-character hotkey to press and hold the button\n");
     fclose(pf);
-    return;
+    return 1;
   }
 
   pf = fopen(name, "rt");
-  if(pf == NULL){fprintf(stderr, "Can not open config file [%s]\n", name); return;}
+  if(pf == NULL){fprintf(stderr, "Can not open config file [%s]\n", name); return 0;}
   int res;
   char str[1000];
   int line = 0;
   for(int i=0; i<4; i++){
     if( fgets(str, sizeof(str), pf) == NULL){
-      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); exit(0);
+      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); return 0;
     }
     line++;
     res = sscanf(str, "%5s%5s%5s%5s",
                  button[0+4*i].caption, button[1+4*i].caption,
                  button[2+4*i].caption, button[3+4*i].caption);
-    if(res != 4){fclose(pf); fprintf(stderr, "Error 1 in configuration file %i\n", line); exit(0);}
+    if(res != 4){fclose(pf); fprintf(stderr, "Error 1 in configuration file %i\n", line); return 0;}
     for(int j=0; j<4; j++){
       res = strlen((char*)(button[j+4*i].caption));
       if(res == 1){
@@ -309,7 +309,7 @@ void cfg_load(){
       }
     }
     if( fgets(str, sizeof(str), pf) == NULL){
-      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); exit(0);
+      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); return 0;
     }
     line++;
     res = sscanf(str, " %c/%c %c/%c %c/%c %c/%c",
@@ -318,7 +318,7 @@ void cfg_load(){
                  &(button[2+4*i].hotkey), &(button[2+4*i].hotkey_hold),
                  &(button[3+4*i].hotkey), &(button[3+4*i].hotkey_hold)
           );
-    if(res != 8){fclose(pf); fprintf(stderr, "Error 2 in configuration file %i %i\n", line, res); exit(0);}
+    if(res != 8){fclose(pf); fprintf(stderr, "Error 2 in configuration file %i %i\n", line, res); return 0;}
 
     if( fgets(str, sizeof(str), pf) == NULL){
       fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); exit(0);
@@ -331,15 +331,14 @@ void cfg_load(){
                  &(button[3+4*i].mask)
           );
       
-    if(res != 4){fclose(pf); fprintf(stderr, "Error 3 in configuration file %i %i\n", line, res); exit(0);}
+    if(res != 4){fclose(pf); fprintf(stderr, "Error 3 in configuration file %i %i\n", line, res); return 0;}
 
     if( fgets(str, sizeof(str), pf) == NULL){
-      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); exit(0);
+      fclose(pf); fprintf(stderr, "Unexpected end of configuration file\n"); return 0;
     }
     line++;
   }
-  while(1){
-    if( fgets(str, sizeof(str), pf) == NULL)break;
+  while( fgets(str, sizeof(str), pf) != NULL ){
     line++;
     char name[100], val[100];
     if(sscanf(str, "%99s%*[ \t=]%[^\n]", name, val) < 1)continue;
@@ -354,6 +353,18 @@ void cfg_load(){
     }
   }
   fclose(pf);
+  
+  hiddevice_t *dev = HidOpen(0x16C0, 0x05DF, man_str, prod_str);
+  if( !dev ){
+    fprintf(stderr, "Can not connect the device 16C0:05DF [%ls] [%ls]\n", man_str, prod_str);
+    printf("\nAvaible devices are:\n");
+    HidClose(dev);
+    HidOpen(0,0,NULL,NULL);
+    return 0;
+  }
+  HidClose(dev);
+  
+  return 1;
 }
 
 void usb_update(){
