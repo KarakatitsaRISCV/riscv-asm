@@ -108,3 +108,5 @@ dfu: $(frmname).bin
 -include $(shell mkdir -p $(builddir)/dep) $(wildcard $(builddir)/dep/*)
 
 .PHONY: all clean
+
+# ffmpeg -i input.mp3 -ac 1 -ar 8k -acodec pcm_u8  audiodata.wav
