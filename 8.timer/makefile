@@ -78,33 +78,59 @@ clean:
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
 
-uart_port="/dev/tty_GD32_PROG_0"
+ch32_port="/dev/tty_CH32_PROG_0"
+gd32_port="/dev/tty_GD32_PROG_0"
 	
 prog:	$(frmname).bin
-	stty -F $(uart_port) 300
-	stty -F $(uart_port) 50
-	echo 'RBU' > $(uart_port)
-	echo 'rBU' > $(uart_port)
+	stty -F $(gd32_port) 300
+	stty -F $(gd32_port) 50
+	echo 'RBU' > $(gd32_port)
+	echo 'rBU' > $(gd32_port)
 	sleep 1
-	stm32flash $(uart_port) -w $(frmname).bin
-	stty -F $(uart_port) 50
-	echo 'RbU' > $(uart_port)
+	stm32flash $(gd32_port) -w $(frmname).bin
+	stty -F $(gd32_port) 50
+	echo 'RbU' > $(gd32_port)
 	sleep 1
-	echo 'rbuz' > $(uart_port)
+	echo 'rbuz' > $(gd32_port)
 reset:
-	stty -F $(uart_port) 300
-	stty -F $(uart_port) 50
-	echo 'RBU' > $(uart_port)
-	echo 'rBU' > $(uart_port)
+	stty -F $(gd32_port) 300
+	stty -F $(gd32_port) 50
+	echo 'RBU' > $(gd32_port)
+	echo 'rBU' > $(gd32_port)
 	sleep 1
-	stty -F $(uart_port) 50
-	echo 'RbU' > $(uart_port)
+	stty -F $(gd32_port) 50
+	echo 'RbU' > $(gd32_port)
 	sleep 1
-	echo 'rbuz' > $(uart_port)
+	echo 'rbuz' > $(gd32_port)
 prog_st: $(frmname).bin
 	stm32flash /dev/ttyUSB0 -w $(frmname).bin
 dfu: $(frmname).bin
 	dfu-util -a 0 -d 28e9:0189 -s 0x08000000 -D $(frmname).bin
+	
+
+rem_dir="/home/user/prog/test"
+
+rem:	
+	scp $(frmname).bin rvstand:$(rem_dir)/test.bin
+	ssh rvstand "cd $(rem_dir) ; "\
+	  "stty -F $(gd32_port) 300 ;"\
+	  "stty -F $(gd32_port) 50 ;"\
+	  "echo 'RBU' > $(gd32_port) ;"\
+	  "echo 'rBU' > $(gd32_port) ;"\
+	  "sleep 1 ;"\
+	  "stm32flash $(gd32_port) -w test.bin ;"\
+	  "stty -F $(gd32_port) 50 ;"\
+	  "echo 'RbU' > $(gd32_port) ;"\
+	  "sleep 1 ;"\
+	  "echo 'rbuz' > $(gd32_port) ;"
+	  
+rem_rst:
+	ssh rvstand "cd $(rem_dir) ; "\
+	  "stty -F $(gd32_port) 300 ;"\
+	  "stty -F $(gd32_port) 50 ;"\
+	  "echo 'RbU' > $(gd32_port) ;"\
+	  "sleep 1 ;"\
+	  "echo 'rbUz' > $(gd32_port) ;"\
 
 -include $(shell mkdir -p $(builddir)/dep) $(wildcard $(builddir)/dep/*)
 
