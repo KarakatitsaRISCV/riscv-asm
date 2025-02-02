@@ -256,9 +256,9 @@ handle_reset:
     ori t0, t0, 3           
 	csrw mtvec, t0
 
-	la a0,__libc_fini_array
-    call atexit
-    call __libc_init_array
+	#la a0,__libc_fini_array
+    #call atexit
+    #call __libc_init_array
 
     jal  SystemInit
 	la t0, main
