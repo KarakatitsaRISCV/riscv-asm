@@ -113,7 +113,8 @@ clean:
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
 	
-uart_port="/dev/tty_STFLASH_0"
+#uart_port="/dev/tty_STFLASH_0"
+uart_port="/dev/tty_CH32_PROG_0"
 
 prog:	$(frmname).bin
 	stty -F $(uart_port) 300
@@ -121,7 +122,7 @@ prog:	$(frmname).bin
 	echo 'RBU' > $(uart_port)
 	echo 'rBU' > $(uart_port)
 	sleep 1
-	../../wch-isp/wch-isp --port=$(uart_port) -p -b write $(frmname).bin
+	wch-isp --port=$(uart_port) -p -b write $(frmname).bin
 	stty -F $(uart_port) 50
 	echo 'RbU' > $(uart_port)
 	sleep 1

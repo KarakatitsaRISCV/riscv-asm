@@ -24,6 +24,7 @@ ifneq (, $(shell which riscv64-unknown-elf-gcc 2>/dev/null))
   GCCPATH = -L/usr/lib/gcc/riscv64-unknown-elf/$(GCCVER)/$(ARCH_$(MCU))/ilp32/
 else ifneq (, $(shell which riscv64-linux-gnu-gcc 2>/dev/null))
   CROSS_COMPILE=riscv64-linux-gnu-
+  GCCPATH = -L$(libdir)/rv32imac -lgcc
 else
   $(error Unknown RISC-V compiler)
 endif
@@ -117,16 +118,39 @@ clean:
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
 	
-uart_port="/dev/tty_STFLASH_0"
+uart_port="/dev/tty_CH32_PROG_0"
+#uart_port="/dev/tty_STFLASH_0"
 
-prog:	$(frmname).bin
+prog:	
 	stty -F $(uart_port) 300
 	stty -F $(uart_port) 50
 	echo 'RBU' > $(uart_port)
 	echo 'rBU' > $(uart_port)
 	sleep 1
-	../../wch-isp/wch-isp --port=$(uart_port) -p -b write $(frmname).bin
+	wch-isp --port=$(uart_port) -p -b write $(frmname).bin
 	stty -F $(uart_port) 50
+	echo 'RbU' > $(uart_port)
+	sleep 1
+	echo 'rbuz' > $(uart_port)
+	
+info:
+	stty -F $(uart_port) 300
+	stty -F $(uart_port) 50
+	echo 'RBU' > $(uart_port)
+	echo 'rBU' > $(uart_port)
+	sleep 1
+	wch-isp --port=$(uart_port) -p --database-path="../../" info
+	stty -F $(uart_port) 50
+	echo 'RbU' > $(uart_port)
+	sleep 1
+	echo 'rbuz' > $(uart_port)
+	
+reset:
+	stty -F $(uart_port) 300
+	stty -F $(uart_port) 50
+	echo 'RBU' > $(uart_port)
+	echo 'rBU' > $(uart_port)
+	sleep 1
 	echo 'RbU' > $(uart_port)
 	sleep 1
 	echo 'rbuz' > $(uart_port)
