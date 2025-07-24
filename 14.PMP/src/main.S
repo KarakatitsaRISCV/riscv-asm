@@ -498,7 +498,7 @@ CLEAR_BSS_END:
   li t0, (((0b11<<3) | (0b000<<0))<<0)
   csrw pmpcfg0, t0
   uart_puts_P "PMP variable size page (now: 8 bytes)\r\n"
-#elif 0 //# intersection of areas
+#elif 1 //# intersection of areas
   #define PMP_PAGE(addr, pwr2) ( ( (addr &~ ((1<<pwr2)-1)) | ((1<<(pwr2-1))-1) )>>2 )
   li t0, (0x20004004 >> 2)
   csrw pmpaddr0, t0
