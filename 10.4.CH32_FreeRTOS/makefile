@@ -137,8 +137,10 @@ clean:
 size: $(frmname).elf
 	$(SIZE) $(frmname).elf
 	
-wch_isp = "../wch-isp/wch-isp"
-uart_port="/dev/tty_STFLASH_0"
+#wch_isp = "../../wch-isp/wch-isp"
+#uart_port="/dev/tty_STFLASH_0"
+wch-isp="wch-isp"
+uart_port="/dev/tty_CH32_PROG_0"
 
 prog:	$(frmname).bin size
 	stty -F $(uart_port) 300
@@ -157,9 +159,7 @@ info:
 	echo 'RBU' > $(uart_port)
 	echo 'rBU' > $(uart_port)
 	sleep 0.1
-	$(wch_isp) --port=$(uart_port) --database-path="../wch-isp/devices/" info
-	#$(wch_isp) --port=$(uart_port) --database-path="../wch-isp/devices/" optionshow 'SRAM_CODE_MODE = 0'
-	#$(wch_isp) --port=$(uart_port) --database-path="../wch-isp/devices/" optionbytes 'SRAM_CODE_MODE = 0'
+	$(wch_isp) --port=$(uart_port) -b info
 	stty -F $(uart_port) 50
 	echo 'RbU' > $(uart_port)
 	sleep 0.1
@@ -169,6 +169,22 @@ reset:
 	stty -F $(uart_port) 50
 	echo 'Rbu' > $(uart_port)
 	echo 'rbuz' > $(uart_port)
+	
+rem_dir="/home/user/prog/test"
+rem_ch:	
+	scp $(frmname).bin rvstand:$(rem_dir)/test.bin
+	ssh rvstand "cd $(rem_dir) ; "\
+	  "stty -F $(uart_port) 300 ;"\
+	  "stty -F $(uart_port) 50 ;"\
+	  "echo 'RBU' > $(uart_port) ;"\
+	  "echo 'rBU' > $(uart_port) ;"\
+	  "sleep 1 ;"\
+	  "wch-isp --port=$(uart_port) -p -b write test.bin ;"\
+	  "stty -F $(uart_port) 50 ;"\
+	  "echo 'RbU' > $(uart_port) ;"\
+	  "sleep 1 ;"\
+	  "echo 'rbuz' > $(uart_port) ;"
+	
 	
 pause:
 	stty -F $(uart_port) 300

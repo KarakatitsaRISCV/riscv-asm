@@ -1,9 +1,6 @@
 #include "ch32v30x.h"
 #include "clock.h"
 #include "pinmacro.h"
-#define USART 1
-#define UART_SIZE_PWR 8
-#include "uart.h"
 
 #ifndef NULL
   #define NULL ((void*)0)
